@@ -1,0 +1,26 @@
+name: Continous Deployment Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed  # Trigger the workflow when a pull request is closed
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        run: |
+          docker build -t fastapi-app .
+          docker run -d -p 8000:8000 fastapi-app
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production..."
