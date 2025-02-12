@@ -1,25 +1,47 @@
-name: Continous Deployment Pipeline
+
+name: Deploy FastAPI App
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-    types:
-      - closed  # Trigger the workflow when a pull request is closed.
 
 jobs:
   deploy:
+    name: deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Docker
+      - name: Set up SSH Key
         run: |
-          docker build -t fastapi-app .
-          docker run -d -p 8000:8000 fastapi-app
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to production
+      - name: Deploy to EC2
         run: |
-          echo "Deploying to production..."
+          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e  # Exit immediately on error
+            
+            # Define working directory
+            APP_DIR="/home/ubuntu/app"
+
+            # Clone repo if not exists, else pull latest changes
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone https://github.com/FFTCMJBJ054/fastapi-book-project.git $APP_DIR
+            fi
+            cd $APP_DIR
+            git pull origin main
+
+            # Stop and remove old container (if running)
+            docker stop fastapi-app || true
+            docker rm fastapi-app || true
+
+            # Build and run the new container
+            docker build -t fastapi-app .
+            docker run -d -p 8000:8000 --name fastapi-app fastapi-app
+
+            # Restart Nginx to apply any config changes
+            sudo systemctl restart nginx
+          EOF
