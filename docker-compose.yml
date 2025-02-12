@@ -1,7 +1,8 @@
 version: "3.8"
 services:
   app:
-    build: .
+    build: app
+    hostname: my-fastapi-app
     ports:
       - "8000:8000"
     restart: always
