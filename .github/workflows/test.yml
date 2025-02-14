@@ -1,0 +1,22 @@
+name: test 
+
+on: 
+  pull_request:
+     branches: 
+        - main 
+  workflow_dispatch:
+
+jobs: 
+  test:
+    runs-on: Ubuntu-latest 
+    steps:
+     - uses: action/checkout@v4
+     - uses: actions/setup-python@v2
+       with:
+        python-version: “3.11”
+     - name: Install dependencies 
+       run: | 
+        python -m install —upgrade pip
+        pip install -r requirements.txt
+     - name: test fastapi
+       run: pytest
