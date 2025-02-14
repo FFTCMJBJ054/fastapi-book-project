@@ -27,6 +27,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ls -la ~/.ssh
           echo "Key file created and permissions set"
+          ssh-keyscan -H $AWS_HOST >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         run: |
