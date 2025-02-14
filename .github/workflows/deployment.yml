@@ -27,29 +27,29 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ls -la ~/.ssh
           echo "Key file created and permissions set"
-          ssh-keyscan -H $AWS_HOST >> ~/.ssh/known_hosts
+          
 
       - name: Deploy to EC2
-        run: |
-          ssh $SSH_USERNAME@$AWS_HOST << 'EOF'
-            set -e
-            echo "Running as: $(whoami)"
-
-            # Clone or update repository
-            if [ ! -d "/home/$SSH_USERNAME/fastapi-book-project" ]; then
-              git clone https://github.com/FFTCMJBJ054/fastapi-book-project.git /home/$SSH_USERNAME/fastapi-book-project
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Current user: $(whoami)"
+            echo "Current directory: $(pwd)"
+            
+            # Check if repository exists
+            if [ ! -d "fastapi-book-project" ]; then
+              git clone https://github.com/FFTCMJBJ054/fastapi-book-project.git
             fi
             
-            cd /home/$SSH_USERNAME/fastapi-book-project
+            cd fastapi-book-project
+
             git fetch origin main
             git reset --hard origin/main
 
-            # Install Docker if not installed
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo usermod -aG docker $SSH_USERNAME
-
-           # Stop existing containers
+            # Stop existing containers
             docker-compose down || true
             
             # Build and start containers
@@ -57,4 +57,4 @@ jobs:
             
             # Verify containers are running
             docker ps 
-          EOF
+          
