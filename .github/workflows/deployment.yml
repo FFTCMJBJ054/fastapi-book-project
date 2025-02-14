@@ -1,0 +1,59 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      host: ${{ secrets.AWS_HOST }}
+      username: ${{ secrets.SSH_USERNAME }}
+      key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ls -la ~/.ssh
+          echo "Key file created and permissions set"
+
+      - name: Deploy to EC2
+        run: |
+          ssh $SSH_USERNAME@$AWS_HOST << 'EOF'
+            set -e
+            echo "Running as: $(whoami)"
+
+            # Clone or update repository
+            if [ ! -d "/home/$SSH_USERNAME/fastapi-book-project" ]; then
+              git clone https://github.com/FFTCMJBJ054/fastapi-book-project.git /home/$SSH_USERNAME/fastapi-book-project
+            fi
+            
+            cd /home/$SSH_USERNAME/fastapi-book-project
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Install Docker if not installed
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo usermod -aG docker $SSH_USERNAME
+
+           # Stop existing containers
+            docker-compose down || true
+            
+            # Build and start containers
+            docker-compose up --build -d
+            
+            # Verify containers are running
+            docker ps 
+          EOF
