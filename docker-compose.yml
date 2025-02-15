@@ -8,6 +8,7 @@ services:
       - "8000:8000"
     networks:
       - app_network
+    restart: always
 
   nginx:
     image: nginx:latest
