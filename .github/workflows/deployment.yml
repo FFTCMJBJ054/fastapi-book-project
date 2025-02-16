@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
 
     env:
       host: ${{ secrets.AWS_HOST }}
@@ -35,8 +34,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "Current user: $(whoami)"
-            echo "Current directory: $(pwd)"
             
             # Check if repository exists
             if [ ! -d "fastapi-book-project" ]; then
@@ -52,7 +49,7 @@ jobs:
             docker-compose down || true
             
             # Build and start containers
-            docker-compose up --build -d
+            docker-compose up -d --build
             
             # Verify containers are running
             docker ps 
