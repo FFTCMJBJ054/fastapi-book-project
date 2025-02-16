@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   deploy:
@@ -46,8 +45,8 @@ jobs:
             
             cd fastapi-book-project
 
-            git fetch origin main
-            git reset --hard origin/main
+            git stash
+            git pull origin main
 
             # Stop existing containers
             docker-compose down || true
